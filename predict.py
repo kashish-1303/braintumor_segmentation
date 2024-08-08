@@ -232,171 +232,10 @@
 #     # Predict each volume and save the results in np array
 #     brain_seg_pred.predict_multiple_volumes(test_path[:50], save=True, show=True)
 
-# import numpy as np
-# import SimpleITK as sitk
-# from model import TwoPathwayGroupCNN
-# from losses import gen_dice_loss, dice_whole_metric, dice_core_metric, dice_en_metric
-# from tensorflow.keras.models import load_model
-
-# class Prediction:
-#     def __init__(self, model_path, batch_size_test=2):
-#         self.model = self.load_model(model_path)
-#         self.batch_size_test = batch_size_test
-
-#     def load_model(self, model_path):
-#         return load_model(model_path, custom_objects={
-#             'gen_dice_loss': gen_dice_loss,
-#             'dice_whole_metric': dice_whole_metric,
-#             'dice_core_metric': dice_core_metric,
-#             'dice_en_metric': dice_en_metric
-#         })
-
-#     def predict_volume(self, filepath_image, show=False):
-#         # Load and preprocess the image data
-#         test_image = self.load_and_preprocess(filepath_image)
-        
-#         # Predict
-#         prediction = self.model.predict(test_image, batch_size=self.batch_size_test, verbose=1 if show else 0)
-#         prediction = np.argmax(prediction, axis=-1)
-        
-#         # Post-process prediction
-#         prediction[prediction == 3] = 4
-        
-#         return prediction
-
-#     def load_and_preprocess(self, filepath_image):
-#         # Implement image loading and preprocessing here
-#         # This should return a numpy array of shape (1, height, width, channels)
-#         pass
-
-#     # ... (rest of the methods remain the same)
-
-# if __name__ == "__main__":
-#     model_path = "brain_segmentation/TwoPathwayGroupCNN.best.hdf5"
-#     predictor = Prediction(model_path)
-    
-#     # Example usage
-#     test_image_path = "path/to/test/image"
-#     prediction = predictor.predict_volume(test_image_path, show=True)
-    
-#     # Save or further process the prediction
-
-# import numpy as np
-# import SimpleITK as sitk
-# from model import TwoPathwayGroupCNN
-# from losses import gen_dice_loss, dice_whole_metric, dice_core_metric, dice_en_metric
-# from tensorflow.keras.models import load_model
-
-# class Prediction:
-#     def __init__(self, model_path, batch_size_test=2):
-#         self.model = self.load_model(model_path)
-#         self.batch_size_test = batch_size_test
-
-#     def load_model(self, model_path):
-#         return load_model(model_path, custom_objects={
-#             'gen_dice_loss': gen_dice_loss,
-#             'dice_whole_metric': dice_whole_metric,
-#             'dice_core_metric': dice_core_metric,
-#             'dice_en_metric': dice_en_metric
-#         })
-
-#     def predict_volume(self, filepath_image, show=False):
-#         # Load and preprocess the image data
-#         test_image = self.load_and_preprocess(filepath_image)
-        
-#         # Predict
-#         prediction = self.model.predict(test_image, batch_size=self.batch_size_test, verbose=1 if show else 0)
-#         prediction = np.argmax(prediction, axis=-1)
-        
-#         # Post-process prediction
-#         prediction[prediction == 3] = 4
-        
-#         return prediction
-
-#     def load_and_preprocess(self, filepath_image):
-#         # Implement image loading and preprocessing here
-#         # This should return a numpy array of shape (1, height, width, channels)
-#         pass
-
-#     # ... (other methods as needed)
-
-# if __name__ == "__main__":
-#     model_path = "brain_segmentation/TwoPathwayGroupCNN.best.keras"
-#     predictor = Prediction(model_path)
-    
-#     # Example usage
-#     test_image_path = "path/to/test/image"
-#     prediction = predictor.predict_volume(test_image_path, show=True)
-    
-#     # Save or further process the prediction
 
 
-import numpy as np 
-import SimpleITK as sitk 
-import os 
-from model import TwoPathwayGroupCNN 
-from losses import gen_dice_loss, dice_whole_metric, dice_core_metric, dice_en_metric 
-from tensorflow.keras.models import load_model 
-from skimage.transform import resize
-class Prediction: 
-    def __init__(self, model_path, batch_size_test=2): 
-        self.model = self.load_model(model_path) 
-        self.batch_size_test = batch_size_test 
-   
-   
-   
-    def load_model(self, model_path): 
-        return load_model(model_path, custom_objects={ 
-            'gen_dice_loss': gen_dice_loss, 
-            'dice_whole_metric': dice_whole_metric, 
-            'dice_core_metric': dice_core_metric, 
-            'dice_en_metric': dice_en_metric }) 
-   
-   
-   
-    def predict_volume(self, filepath_image, show=False): 
-        test_image = self.load_and_preprocess(filepath_image) 
-        prediction = self.model.predict(test_image, batch_size=self.batch_size_test, verbose=1 if show else 0) 
-        prediction = np.argmax(prediction, axis=-1) 
-        prediction[prediction == 3] = 4 
-        return prediction 
-    
-    
-    
-    def load_and_preprocess(self, filepath_image):  
-        image = sitk.ReadImage(filepath_image) 
-        image_array = sitk.GetArrayFromImage(image) 
-        image_array= resize(image_array,(128,128),anti_aliasing= True)
-        image_array = (image_array - np.mean(image_array)) / np.std(image_array) 
-        image_array = np.expand_dims(image_array, axis=(0, -1)) 
-        image_array=np.repeat(image_array,4,axis=-1)
-        return image_array 
-   
-   
-    def save_prediction(self, prediction, output_path): 
-        prediction_sitk = sitk.GetImageFromArray(prediction.squeeze())
-        sitk.WriteImage(prediction_sitk, output_path) 
-if __name__ == "__main__": 
-    model_path = "brain_segmentation/TwoPathwayGroupCNN.01_16.672.keras" 
-    predictor = Prediction(model_path) # Create predictions_twopath folder if it doesn't exist
-            
-    output_folder = "predictions_twopath"
-    os.makedirs(output_folder, exist_ok=True) # Get all image files from the imgs folder 
-        
-    imgs_folder = "imgs" 
-    image_files = [f for f in os.listdir(imgs_folder) if f.endswith(('.png', '.jpg', '.nii', '.nii.gz'))]
-           
-    for image_file in image_files: 
-        input_path = os.path.join(imgs_folder, image_file)
-        output_path = os.path.join(output_folder, f"prediction_{image_file}") 
 
-                
-                
-        print(f"Processing {image_file}...") 
-        prediction = predictor.predict_volume(input_path, show=True)
-        predictor.save_prediction(prediction, output_path) 
-        print(f"Prediction saved to {output_path}") 
-    print("All predictions completed and saved in the 'predictions_twopath' folder.")
+
 
 #8/8/24 code
 import numpy as np 
@@ -430,15 +269,7 @@ class Prediction:
         return prediction 
     
     
-    
-    # def load_and_preprocess(self, filepath_image):  
-    #     image = sitk.ReadImage(filepath_image) 
-    #     image_array = sitk.GetArrayFromImage(image) 
-    #     image_array= resize(image_array,(128,128),anti_aliasing= True)
-    #     image_array = (image_array - np.mean(image_array)) / np.std(image_array) 
-    #     image_array = np.expand_dims(image_array, axis=(0, -1)) 
-    #     image_array=np.repeat(image_array,4,axis=-1)
-    #     return image_array 
+
 
     def load_and_preprocess(self, filepath_image):
         image = sitk.ReadImage(filepath_image)
@@ -459,26 +290,7 @@ class Prediction:
     def save_prediction(self, prediction, output_path): 
         prediction_sitk = sitk.GetImageFromArray(prediction.squeeze().astype(np.uint8))
         sitk.WriteImage(prediction_sitk, output_path) 
-# if __name__ == "__main__": 
-#     # model_path = "brain_segmentation/TwoPathwayGroupCNN.01_16.672.keras" 
-#     model_path="brain_segmentation\TwoPathwayGroupCNN.01_12.302.keras"
-#     predictor = Prediction(model_path) # Create predictions_twopath folder if it doesn't exist
-            
-#     output_folder = "predictions_twopath"
-#     os.makedirs(output_folder, exist_ok=True) # Get all image files from the imgs folder 
-        
-#     imgs_folder = "imgs" 
-#     image_files = [f for f in os.listdir(imgs_folder) if f.endswith(('.png', '.jpg', '.nii', '.nii.gz'))]
-           
-#     for image_file in image_files: 
-#         input_path = os.path.join(imgs_folder, image_file)
-#         output_path = os.path.join(output_folder, f"prediction_{image_file}") 
-                
-#         print(f"Processing {image_file}...") 
-#         prediction = predictor.predict_volume(input_path, show=True)
-#         predictor.save_prediction(prediction, output_path) 
-#         print(f"Prediction saved to {output_path}") 
-#     print("All predictions completed and saved in the 'predictions_twopath' folder.")
+
 if __name__ == "__main__":
     model_path = "brain_segmentation\TwoPathwayGroupCNN.01_12.302.keras"
     predictor = Prediction(model_path)
